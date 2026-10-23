@@ -7,9 +7,7 @@ camera:
   vflip: false
   hflip: false
   bitrate: 3000000
-  # 是否在录像画面左上角烧录时间戳
   burn_timestamp: true
-  # 时间戳格式（strftime）
   timestamp_format: "%Y-%m-%d %H:%M:%S"
 motion:
   enabled: true
@@ -74,7 +72,7 @@ mail:
   password_env: MAIL_PASSWORD
   sender: alert@example.com
   recipients: owner@example.com
-  subject_prefix: '[RPi-Zero 监控]'
+  subject_prefix: '[RPi-Zero-Surveillance]'
 web:
   enabled: true
   host: 0.0.0.0

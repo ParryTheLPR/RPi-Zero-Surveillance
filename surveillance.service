@@ -1,0 +1,24 @@
+[Unit]
+Description=Raspberry Pi Zero W OV5647 Surveillance
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/rpi-zero-surveillance
+# 密码不要写进服务文件，单独建 /etc/surveillance.env（chmod 600）：
+#   MAIL_PASSWORD=xxxx
+#   SMB_PASSWORD=xxxx
+#   WEB_PASSWORD=xxxx   网页登录密码
+EnvironmentFile=/etc/surveillance.env
+ExecStart=/usr/bin/python3 -m monitor.main --config /home/pi/rpi-zero-surveillance/config.yaml
+Restart=always
+RestartSec=10
+# 防止日志无限增长
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=surveillance
+
+[Install]
+WantedBy=multi-user.target

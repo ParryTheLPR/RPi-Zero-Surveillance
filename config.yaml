@@ -1,0 +1,89 @@
+camera:
+  main_width: 1280
+  main_height: 720
+  fps: 15
+  lores_width: 320
+  lores_height: 240
+  vflip: false
+  hflip: false
+  bitrate: 3000000
+  # 是否在录像画面左上角烧录时间戳
+  burn_timestamp: true
+  # 时间戳格式（strftime）
+  timestamp_format: "%Y-%m-%d %H:%M:%S"
+motion:
+  enabled: true
+  sensitivity: 28
+  min_area: 400
+  blur_px: 5
+  close_width: 15
+  close_height: 7
+  merge_gap: 60
+  confirm_frames: 2
+  draw_boxes: true
+  box_color:
+  - 0
+  - 255
+  - 0
+  box_thickness: 2
+  snapshot_on_motion: true
+recorder:
+  mode: motion
+  segment_seconds: 600
+  post_motion_seconds: 12
+  local_dir: ./recordings
+  snapshot_dir: ./snapshots
+  max_local_gb: 8
+  keep_local_after_upload: true
+smb:
+  enabled: false
+  host: 192.168.1.10
+  port: 445
+  share: surveillance
+  username: guest
+  password_env: SMB_PASSWORD
+  domain: ''
+  remote_dir: /rpi-zero-01
+  retry_interval: 60
+  upload_snapshots: true
+battery:
+  enabled: false
+  backend: command
+  poll_interval: 30
+  low_threshold: 3.5
+  critical_threshold: 3.3
+  alert_cooldown: 1800
+  command: cat /sys/class/power_supply/battery/voltage_now | awk '{printf "%.3f\n",
+    $1/1000000}'
+  mcp3008:
+    bus: 0
+    device: 0
+    channel: 0
+    vref: 3.3
+    divider_ratio: 2.0
+  ina219:
+    i2c_bus: 1
+    address: '0x40'
+mail:
+  enabled: true
+  smtp_host: smtp.example.com
+  smtp_port: 465
+  use_ssl: true
+  use_starttls: false
+  username: alert@example.com
+  password_env: MAIL_PASSWORD
+  sender: alert@example.com
+  recipients: owner@example.com
+  subject_prefix: '[RPi-Zero 监控]'
+web:
+  enabled: true
+  host: 0.0.0.0
+  port: 8080
+  username: admin
+  password_env: WEB_PASSWORD
+  stream_width: 480
+  stream_fps: 10
+  jpeg_quality: 60
+system:
+  log_level: INFO
+  queue_file: ./upload_queue.json

@@ -1,0 +1,209 @@
+# ============================================================
+# Commented config template (example): purpose, ranges and tuning
+# for every field are written here.
+#
+# Usage:
+#   - This file is only a manual/template; the program does not read it.
+#   - The live file is config.yaml in the same directory (web "Save config"
+#     rewrites it wholesale and drops comments, so comments live here).
+#   - To change a value, follow this template in the web form, or copy this
+#     file to config.yaml and edit it manually.
+#
+# Rules: booleans are true/false; quote strings containing :, # or spaces;
+#       relative paths are relative to this file; passwords always come from
+#       environment variables and are never written here.
+# ============================================================
+
+# ------------------------------------------------------------
+# Camera capture (resolution/framerate/bitrate/flip are "restart" items)
+# ------------------------------------------------------------
+camera:
+  # Main frame width (px) for recording and snapshots. Keep ≤1280 on Zero W; use 960/640 to save space
+  main_width: 1280
+  # Main frame height (px). 1280x720=720p, 640x480=480p; keep the aspect ratio
+  main_height: 720
+  # Recording fps; Zero W recommends 10~15, higher adds encode load
+  fps: 15
+  # Low-resolution width (px) used only for motion detection; not recorded
+  lores_width: 320
+  # Low-resolution height (px); smaller saves CPU, 320x240 is enough
+  lores_height: 240
+  # Vertical flip (true if camera is mounted upside-down). Restart required
+  vflip: false
+  # Horizontal mirror (true if orientation is wrong). Restart required
+  hflip: false
+  # H.264 target bitrate (bps). 720p15 uses 3,000,000; drop to 1,500,000 to save space. Restart required
+  bitrate: 3000000
+  # Burn a timestamp at the video top-left (true = white time on, false = clean video). Restart required
+  burn_timestamp: true
+  # Timestamp format (strftime); e.g. "%Y/%m/%d %H:%M:%S" or add ms "%H:%M:%S.%f". Restart required
+  timestamp_format: "%Y-%m-%d %H:%M:%S"
+
+# ------------------------------------------------------------
+# Motion detection (applies instantly after web save; no restart)
+# ------------------------------------------------------------
+motion:
+  # Enable motion detection; false = no detection, no recording/snapshot trigger
+  enabled: true
+  # Binarization threshold 0-255, higher = less sensitive. Raise (e.g. 40) on false alarms (leaves/light), lower (e.g. 18) for small missed targets
+  sensitivity: 28
+  # Ignore contours smaller than this area (lores px) to filter noise. Raise on false alarms, lower on misses
+  min_area: 400
+  # Gaussian blur kernel size (odd), denoise; usually 3/5/7
+  blur_px: 5
+  # Close width (lores px): horizontally bridges a target's "old-position echo + new position" into one box; raise for fast motion
+  close_width: 15
+  # Close height (lores px): vertical bridge range, usually 5~9
+  close_height: 7
+  # Contour merge gap (lores px): merge adjacent boxes whose horizontal gap is below this; lower if two targets merge wrongly
+  merge_gap: 60
+  # Consecutive frames detected before counting as one motion, debounce; higher = more stable
+  confirm_frames: 2
+  # Draw the motion box on snapshots (video body always stays clean, no box)
+  draw_boxes: true
+  # Box color in BGR order [blue,green,red]; [0,255,0] is green
+  box_color:
+    - 0
+    - 255
+    - 0
+  # Box line thickness (px)
+  box_thickness: 2
+  # Save a boxed snapshot JPEG when motion is detected
+  snapshot_on_motion: true
+
+# ------------------------------------------------------------
+# Recording & local retention (mode/dir changes require restart)
+# ------------------------------------------------------------
+recorder:
+  # Mode: motion=record only on motion (saves storage, recommended); continuous=7x24. Restart required
+  mode: motion
+  # Continuous: segment length in seconds, auto-cut at boundary; unused in motion mode
+  segment_seconds: 300
+  # Motion: keep recording this many seconds after the last motion to keep the ending
+  post_motion_seconds: 12
+  # Local video directory
+  local_dir: ./recordings
+  # Motion snapshot directory
+  snapshot_dir: ./snapshots
+  # Local retention cap (GB); auto-delete oldest over it; 0 = no auto cleanup
+  max_local_gb: 5
+  # Keep local file after successful SMB upload: true keep, false delete (only successfully uploaded)
+  keep_local_after_upload: true
+
+# ------------------------------------------------------------
+# SMB network share backup upload (host/share/account changes require restart)
+# ------------------------------------------------------------
+smb:
+  # Enable SMB upload; false = local only
+  enabled: true
+  # SMB server address (IP or hostname). Restart required
+  host: "192.168.1.10"
+  # SMB port, default 445, older devices may use 139. Restart required
+  port: 445
+  # Share name (folder exposed on the server), not a full path. Restart required
+  share: "surveillance"
+  # Login username, guest may use "guest". Restart required
+  username: "guest"
+  # Environment variable name the password is read from (password not here). Restart required
+  password_env: "SMB_PASSWORD"
+  # Workgroup/domain, usually leave empty; fill when joined to a domain. Restart required
+  domain: ""
+  # Remote dir (relative to share root), auto-created if missing. Restart required
+  remote_dir: "/rpi-zero-01"
+  # Retry interval on failure (s); during outage files wait in local queue and resume after recovery
+  retry_interval: 60
+  # Also upload motion snapshots; false = videos only
+  upload_snapshots: true
+
+# ------------------------------------------------------------
+# Low-battery monitoring & email alert (thresholds/poll instant; backend type requires restart)
+# ------------------------------------------------------------
+battery:
+  # Enable battery monitoring; false = no voltage read, no low-mail
+  enabled: true
+  # Voltage backend: command=custom command (default); mcp3008=SPI ADC+divider; ina219=I2C sensor. Restart required
+  backend: command
+  # Voltage poll interval (s)
+  poll_interval: 30
+  # Low threshold (V): send "low warning" below it; convert by type/cell count, single Li-ion ~3.5
+  low_threshold: 3.5
+  # Critical threshold (V): send "urgent, cut power" below it; must be below low_threshold, single Li-ion ~3.3
+  critical_threshold: 3.3
+  # Same-tier alert cooldown (s) to avoid jitter spam; 1800 = no repeat same-tier mail within 30 min
+  alert_cooldown: 1800
+  # backend=command: a shell command printing "one float voltage (V)" to stdout
+  command: "cat /sys/class/power_supply/battery/voltage_now | awk '{printf \"%.3f\\n\", $1/1000000}'"
+  # Used by backend=mcp3008 (ignored in command mode)
+  mcp3008:
+    # SPI bus number /dev/spidev<bus>.<device>
+    bus: 0
+    # SPI device (chip select), CE0=0, CE1=1
+    device: 0
+    # ADC channel 0~7 connected to battery
+    channel: 0
+    # ADC reference voltage, commonly 3.3V
+    vref: 3.3
+    # Divider ratio=(upper+lower)/lower resistor per your circuit; 1:1 equal divider = 2.0
+    divider_ratio: 2.0
+  # Used by backend=ina219 (I2C current/voltage sensor, common UPS HAT; ignored in command mode)
+  ina219:
+    # I2C bus number, Zero W usually 1 (/dev/i2c-1)
+    i2c_bus: 1
+    # INA219 I2C address, default 0x40, changeable via A0/A1 pins
+    address: "0x40"
+
+# ------------------------------------------------------------
+# SMTP mail (account/recipients apply instantly on web save; password via env)
+# ------------------------------------------------------------
+mail:
+  # Enable mail sending
+  enabled: true
+  # SMTP server, e.g. QQ smtp.qq.com, 163 smtp.163.com, Gmail smtp.gmail.com
+  smtp_host: "smtp.example.com"
+  # Port: SSL commonly 465, STARTTLS commonly 587; enable only one
+  smtp_port: 465
+  # SSL encryption (with 465), mutually exclusive with use_starttls
+  use_ssl: true
+  # STARTTLS upgrade (with 587), mutually exclusive with use_ssl
+  use_starttls: false
+  # SMTP login account (usually the sender mailbox)
+  username: "alert@example.com"
+  # Env var for mailbox password/authorization code; most providers use an authorization code, not login password. Not here
+  password_env: "MAIL_PASSWORD"
+  # Sender address, usually same as username
+  sender: "alert@example.com"
+  # Recipient list, multiple allowed, one per line
+  recipients:
+    - "owner@example.com"
+  # Subject prefix to filter alerts in the mailbox
+  subject_prefix: "[RPi-Zero 监控]"
+
+# ------------------------------------------------------------
+# Built-in web panel (port/address require restart; preview params instant)
+# ------------------------------------------------------------
+web:
+  # Enable web service; false = background only, no page
+  enabled: true
+  # Listen address: 0.0.0.0 = reachable on LAN; 127.0.0.1 = local only. Restart required
+  host: "0.0.0.0"
+  # Web port, open http://<pi-ip>:port. Restart required
+  port: 8080
+  # Web login username
+  username: "admin"
+  # Env var name for web password (not here). Restart required
+  password_env: "WEB_PASSWORD"
+  # MJPEG preview width (px), scaled proportionally; smaller = smoother, less bandwidth
+  stream_width: 480
+  # Preview fps, Zero W recommends 5~10
+  stream_fps: 10
+  # Preview JPEG quality 1~95, lower saves bandwidth; ~60 is clear and light
+  jpeg_quality: 60
+
+# ------------------------------------------------------------
+# System
+# ------------------------------------------------------------
+system:
+  # Log level DEBUG/INFO/WARNING/ERROR, INFO for daily use
+  log_level: INFO
+  # Persisted SMB upload queue file, resumes after reboot; usually unchanged
+  queue_file: ./upload_queue.json

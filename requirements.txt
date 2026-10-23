@@ -1,0 +1,8 @@
+# 在树莓派上建议：系统包用 install.sh 安装，以下为 pip 依赖。
+# picamera2 / libcamera 走 apt（python3-picamera2），不要用 pip 装。
+numpy
+opencv-python-headless
+PyYAML
+pysmb
+spidev
+smbus2
